@@ -1,27 +1,36 @@
 package br.com.votacao.controller;
 
 
-import br.com.votacao.model.PautaDTO;
 import br.com.votacao.model.SecaoDTO;
+import br.com.votacao.service.SecaoService;
+import javax.ws.rs.core.Response;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.http.HttpResponse;
-import java.util.List;
 @RestController
 @RequestMapping("/secao")
 public class SecaoController {
+    private SecaoService secaoService;
 
         @PostMapping("/abrir")
-        public HttpResponse<SecaoDTO> postSecao(@RequestBody SecaoDTO secaoDTO){
-            return null;
+        public Response postSecao(@RequestBody SecaoDTO secaoDTO){
+            return Response
+                    .status(Response.Status.CREATED)
+                    .entity(secaoService.abrirSecao(secaoDTO))
+                    .build();
         }
         @GetMapping()
-        public HttpResponse<List<SecaoDTO>> getSecao(){
-            return null;
+        public Response getSecoes(){
+            return Response
+                    .status(Response.Status.OK)
+                    .entity(secaoService.getSecoes())
+                    .build();
         }
         @GetMapping("/{id}")
-        public HttpResponse<SecaoDTO> getSecao(@PathVariable String id){
-            return null;
+        public Response getSecao(@PathVariable String id){
+            return Response
+                    .status(Response.Status.OK)
+                    .entity(secaoService.getSecao(id))
+                    .build();
         }
 
 }
