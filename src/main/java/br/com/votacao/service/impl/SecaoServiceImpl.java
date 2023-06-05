@@ -44,11 +44,11 @@ public class SecaoServiceImpl implements SecaoService {
     }
 
     @Override
-    public SecaoDTO getSecao(String id) {
+    public SecaoDTO getSecao(int id) {
         if(Objects.nonNull(id)){
-            Optional<Secao> secao  = secaoRepository.findById(id);
-            if(secao.isPresent())
-                return convertSecaoToSecaoDto(secao.get());
+            Secao secao  = secaoRepository.findById(id);
+            if(Objects.nonNull(secao))
+                return convertSecaoToSecaoDto(secao);
         }
 
         return null;
@@ -67,6 +67,7 @@ public class SecaoServiceImpl implements SecaoService {
         return Pauta
                 .builder()
                 .descricao(pautaDTO.getDescricao())
+                .nome(pautaDTO.getNome())
                 .build();
     }
     public Secao convertSecaoDtoToSecao(SecaoDTO secaoDTO, Pauta pauta){
@@ -87,6 +88,7 @@ public class SecaoServiceImpl implements SecaoService {
                         .nome(secao.getPauta().getNome())
                         .build())
                 .duracao(secao.getDataFinalizacao())
+                .idSecao(secao.getId())
                 .build();
     }
 }

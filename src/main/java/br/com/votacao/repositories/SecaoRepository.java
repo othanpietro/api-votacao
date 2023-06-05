@@ -5,4 +5,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SecaoRepository extends BaseRepository<Secao>{
+    Secao findById(int id);
 }

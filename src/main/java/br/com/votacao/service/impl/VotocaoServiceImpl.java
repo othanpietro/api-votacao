@@ -33,9 +33,9 @@ public class VotocaoServiceImpl implements VotacaoService {
             throw new RuntimeException("Voto incorreto");
         }
 
-        var secao = secaoRepository.findById(String.valueOf(voto.getIdSecao()));
+        var secao = secaoRepository.findById(voto.getIdSecao());
 
-        if(secao.isEmpty()){
+        if(Objects.isNull(secao)){
             throw new RuntimeException("Secão inexistente");
         }
 
@@ -48,13 +48,13 @@ public class VotocaoServiceImpl implements VotacaoService {
 
         if(Objects.nonNull(usuario)) {
 
-            var votoExistente = votacaoRepository.findVotacaoBySecaoAndUsuario(secao.get(), usuario);
+            var votoExistente = votacaoRepository.findVotacaoBySecaoAndUsuario(secao, usuario);
 
             if (Objects.nonNull(votoExistente)) {
                 throw new InputMismatchException("Usuario já votou nesta seção.");
             }
 
-            var novoVoto = convertVotoDtoVotacao(voto, secao.get(), usuario);
+            var novoVoto = convertVotoDtoVotacao(voto, secao, usuario);
 
             return convertVotocaoVotoDto(votacaoRepository.save(novoVoto));
         }
@@ -63,7 +63,7 @@ public class VotocaoServiceImpl implements VotacaoService {
 
         var usuarioCriado = usuarioRepository.save(novoUsuario);
 
-        var novoVoto = convertVotoDtoVotacao(voto, secao.get(), usuarioCriado);
+        var novoVoto = convertVotoDtoVotacao(voto, secao, usuarioCriado);
 
         return convertVotocaoVotoDto(votacaoRepository.save(novoVoto));
     }

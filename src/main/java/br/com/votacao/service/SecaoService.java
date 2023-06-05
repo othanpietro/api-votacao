@@ -10,6 +10,6 @@ public interface SecaoService {
 
     public List<SecaoDTO> getSecoes();
 
-    public SecaoDTO getSecao(String id);
+    public SecaoDTO getSecao(int id);
 
 }

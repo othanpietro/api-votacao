@@ -42,7 +42,9 @@ public class SecaoController {
         @ApiResponses(value = {@ApiResponse(code = 200, message = "Seção carregada com sucesso."),
                 @ApiResponse(code = 500, message = "Não foi possível carregar a seção.")})
         public ResponseEntity<SecaoDTO> getSecao(@PathVariable String id){
-            return ResponseEntity.ok(secaoService.getSecao(id));
+
+            int idNumerico  = Integer.parseInt(id);
+            return ResponseEntity.ok(secaoService.getSecao(idNumerico));
         }
 
 }
