@@ -1,5 +1,8 @@
-# api-votacao
+# Api-votacao
 API para computar votos em um determinada pauta
+
+# Branch
+A branch de desenvolvimento e a mais atual é a dev.
 
 # Configurações da API
 As configurações da api se encontra no arquivo application.properties dentro da pasta resources
