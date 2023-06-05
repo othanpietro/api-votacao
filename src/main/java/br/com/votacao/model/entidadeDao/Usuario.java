@@ -23,4 +23,7 @@ public class Usuario extends BaseEntity {
     @Column(name = "nome")
     private String nome;
 
+    @Column(name = "cpf")
+    private String cpf;
+
 }

@@ -23,4 +23,7 @@ public class Pauta  extends BaseEntity {
     @Column(name = "descricao", nullable = false)
     private String descricao;
 
+    @Column(name = "nome")
+    private String nome;
+
 }

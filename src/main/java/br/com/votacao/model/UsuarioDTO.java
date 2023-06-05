@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 public class UsuarioDTO {
 
     private String nome;
-    private String Cpf;
+    private String cpf;
 
 }

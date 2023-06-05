@@ -13,6 +13,6 @@ public class VotoDTO {
 
     private String voto;
     private UsuarioDTO usuarioDTO;
-    private String idSecao;
+    private int idSecao;
 
 }
