@@ -1,6 +1,7 @@
 package br.com.votacao.service.impl;
 
 
+import br.com.votacao.exceptions.VotacaoException;
 import br.com.votacao.model.UsuarioDTO;
 import br.com.votacao.model.VotoDTO;
 import br.com.votacao.model.entidadeDao.Secao;
@@ -13,62 +14,68 @@ import br.com.votacao.service.VotacaoService;
 import br.com.votacao.utils.ValidaCPF;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.InputMismatchException;
 import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-public class VotocaoServiceImpl implements VotacaoService {
+public class VotacaoServiceImpl implements VotacaoService {
 
     private final VotacaoRepository votacaoRepository;
     private final UsuarioRepository usuarioRepository;
     private final SecaoRepository secaoRepository;
     @Override
+    @Transactional(propagation = Propagation.REQUIRED)
     public VotoDTO enviarVoto(VotoDTO voto) {
+        try {
+            validaVoto(voto);
 
-        validaVoto(voto);
-
-        if(voto.getVoto().length() > 1 ||
-                !(voto.getVoto().equalsIgnoreCase("s")
-                        || voto.getVoto().equalsIgnoreCase("n"))){
-            throw new InputMismatchException("Voto incorreto");
-        }
-
-        var secao = secaoRepository.findById(voto.getIdSecao());
-
-        if(Objects.isNull(secao)){
-            throw new InputMismatchException("Secão inexistente");
-        }
-
-        var cpf = ValidaCPF.removeMascara(voto.getUsuarioDTO().getCpf());
-
-        if(!ValidaCPF.isCPF(cpf)){
-            throw new InputMismatchException("CPF invalido.");
-        }
-        var usuario = usuarioRepository.findByCpf(cpf);
-
-        if(Objects.nonNull(usuario)) {
-
-            var votoExistente = votacaoRepository.findVotacaoBySecaoAndUsuario(secao, usuario);
-
-            if (Objects.nonNull(votoExistente)) {
-                throw new InputMismatchException("Usuario já votou nesta seção.");
+            if (voto.getVoto().length() > 1 ||
+                    !(voto.getVoto().equalsIgnoreCase("s")
+                            || voto.getVoto().equalsIgnoreCase("n"))) {
+                throw new VotacaoException("Voto incorreto");
             }
 
-            var novoVoto = convertVotoDtoVotacao(voto, secao, usuario);
+            var secao = secaoRepository.findById(voto.getIdSecao());
+
+            if (Objects.isNull(secao)) {
+                throw new VotacaoException("Secão inexistente");
+            }
+
+            var cpf = ValidaCPF.removeMascara(voto.getUsuarioDTO().getCpf());
+
+            if (!ValidaCPF.isCPF(cpf)) {
+                throw new VotacaoException("CPF invalido.");
+            }
+            var usuario = usuarioRepository.findByCpf(cpf);
+
+            if (Objects.nonNull(usuario)) {
+
+                var votoExistente = votacaoRepository.findVotacaoBySecaoAndUsuario(secao, usuario);
+
+                if (Objects.nonNull(votoExistente)) {
+                    throw new VotacaoException("Usuario já votou nesta seção.");
+                }
+
+                var novoVoto = convertVotoDtoVotacao(voto, secao, usuario);
+
+                return convertVotocaoVotoDto(votacaoRepository.save(novoVoto));
+            }
+
+            var novoUsuario = convertUsuarioDtoUsuario(voto.getUsuarioDTO());
+
+            var usuarioCriado = usuarioRepository.save(novoUsuario);
+
+            var novoVoto = convertVotoDtoVotacao(voto, secao, usuarioCriado);
 
             return convertVotocaoVotoDto(votacaoRepository.save(novoVoto));
+
+        } catch (Exception e){
+            throw new VotacaoException(e.getMessage());
         }
-
-        var novoUsuario = convertUsuarioDtoUsuario(voto.getUsuarioDTO());
-
-        var usuarioCriado = usuarioRepository.save(novoUsuario);
-
-        var novoVoto = convertVotoDtoVotacao(voto, secao, usuarioCriado);
-
-        return convertVotocaoVotoDto(votacaoRepository.save(novoVoto));
     }
 
 
@@ -87,7 +94,7 @@ public class VotocaoServiceImpl implements VotacaoService {
                 Objects.isNull(votoDTO.getUsuarioDTO()) ||
                 !StringUtils.hasText(votoDTO.getUsuarioDTO().getNome()) ||
                 !StringUtils.hasText(votoDTO.getUsuarioDTO().getCpf())) {
-            throw new InputMismatchException("Voto incorreto.");
+            throw new VotacaoException("Voto incorreto.");
         }
     }
     private Usuario convertUsuarioDtoUsuario(UsuarioDTO usuarioDTO){

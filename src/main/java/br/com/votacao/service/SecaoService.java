@@ -1,5 +1,6 @@
 package br.com.votacao.service;
 
+import br.com.votacao.model.ResultadoDTO;
 import br.com.votacao.model.SecaoDTO;
 
 import java.util.List;
@@ -11,5 +12,7 @@ public interface SecaoService {
     public List<SecaoDTO> getSecoes();
 
     public SecaoDTO getSecao(int id);
+
+    public ResultadoDTO getResultadoSecao(int id);
 
 }

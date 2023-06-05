@@ -1,6 +1,7 @@
 package br.com.votacao.controller;
 
 
+import br.com.votacao.model.ResultadoDTO;
 import br.com.votacao.model.SecaoDTO;
 import br.com.votacao.service.SecaoService;
 
@@ -46,5 +47,15 @@ public class SecaoController {
             int idNumerico  = Integer.parseInt(id);
             return ResponseEntity.ok(secaoService.getSecao(idNumerico));
         }
+
+        @GetMapping("/{id}/resultado")
+        @ApiOperation(httpMethod = "GET", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON, value = "Retorna o resultado da votacao de uma seção em um determinada pauta.")
+        @ApiResponses(value = {@ApiResponse(code = 200, message = "Resultado da votação carregado com sucesso."),
+            @ApiResponse(code = 500, message = "Não foi possível carregar o resultado da votação.")})
+        public ResponseEntity<ResultadoDTO> getResultadoPauta(@PathVariable String id){
+
+        int idNumerico  = Integer.parseInt(id);
+        return ResponseEntity.ok(secaoService.getResultadoSecao(idNumerico));
+    }
 
 }
