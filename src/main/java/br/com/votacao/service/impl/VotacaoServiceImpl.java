@@ -93,46 +93,49 @@ public class VotacaoServiceImpl implements VotacaoService {
     @Transactional(propagation = Propagation.REQUIRED)
     @Scheduled(cron = " 0/60 * * * * *")
     public void consultaResultadoSecao(){
-        log.info("inicio do job");
-        var secao = secaoRepository.findAll();
+        try {
+            log.info("inicio do job");
+            var secao = secaoRepository.findAll();
 
-        var secoesEncerradasNaoEnviadas = secao.stream()
-                .filter(s-> !s.isResultadoEnviado())
-                .filter(s-> s.getDataFinalizacao().isBefore(LocalDateTime.now()))
-                .collect(Collectors.toList());
+            var secoesEncerradasNaoEnviadas = secao.stream()
+                    .filter(s -> !s.isResultadoEnviado())
+                    .filter(s -> s.getDataFinalizacao().isBefore(LocalDateTime.now()))
+                    .collect(Collectors.toList());
 
-        if(!secoesEncerradasNaoEnviadas.isEmpty()) {
-            var resultados = secoesEncerradasNaoEnviadas.stream().map(s -> {
+            if (!secoesEncerradasNaoEnviadas.isEmpty()) {
+                var resultados = secoesEncerradasNaoEnviadas.stream().map(s -> {
 
-                var votacao = votacaoRepository.findBySecao(s);
+                    var votacao = votacaoRepository.findBySecao(s);
 
-                var votosSim = votacao.stream().filter(voto -> voto.getVoto().equalsIgnoreCase("s"))
-                        .collect(Collectors.toList());
-                var votosNao = votacao.stream().filter(voto -> voto.getVoto().equalsIgnoreCase("n"))
-                        .collect(Collectors.toList());
+                    var votosSim = votacao.stream().filter(voto -> voto.getVoto().equalsIgnoreCase("s"))
+                            .collect(Collectors.toList());
+                    var votosNao = votacao.stream().filter(voto -> voto.getVoto().equalsIgnoreCase("n"))
+                            .collect(Collectors.toList());
 
-                s.setResultadoEnviado(true);
-                secaoRepository.save(s);
+                    s.setResultadoEnviado(true);
+                    secaoRepository.save(s);
 
-                return ResultadoDTO
-                        .builder()
-                        .prazoFinal(s.getDataFinalizacao())
-                        .votosNAO(votosNao.size())
-                        .votosSIM(votosSim.size())
-                        .pauta(PautaDTO
-                                .builder()
-                                .nome(s.getPauta().getNome())
-                                .descricao(s.getPauta().getDescricao())
-                                .build())
-                        .build();
+                    return ResultadoDTO
+                            .builder()
+                            .prazoFinal(s.getDataFinalizacao())
+                            .votosNAO(votosNao.size())
+                            .votosSIM(votosSim.size())
+                            .pauta(PautaDTO
+                                    .builder()
+                                    .nome(s.getPauta().getNome())
+                                    .descricao(s.getPauta().getDescricao())
+                                    .build())
+                            .build();
 
-            }).collect(Collectors.toList());
+                }).collect(Collectors.toList());
 
 
-            resultados.forEach(r -> topicProducer.send(r.toString()));
+                resultados.forEach(r -> topicProducer.send(r.toString()));
+            }
+            log.info("Fim do job");
+        } catch (Exception e){
+            throw new VotacaoException("Erro na execução do job que produz no kafka");
         }
-        log.info("Fim do job");
-
     }
 
 
