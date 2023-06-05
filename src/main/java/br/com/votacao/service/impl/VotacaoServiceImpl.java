@@ -2,6 +2,9 @@ package br.com.votacao.service.impl;
 
 
 import br.com.votacao.exceptions.VotacaoException;
+import br.com.votacao.kafka.TopicProducer;
+import br.com.votacao.model.PautaDTO;
+import br.com.votacao.model.ResultadoDTO;
 import br.com.votacao.model.UsuarioDTO;
 import br.com.votacao.model.VotoDTO;
 import br.com.votacao.model.entidadeDao.Secao;
@@ -13,20 +16,30 @@ import br.com.votacao.repositories.VotacaoRepository;
 import br.com.votacao.service.VotacaoService;
 import br.com.votacao.utils.ValidaCPF;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
+@Component
+@EnableScheduling
 public class VotacaoServiceImpl implements VotacaoService {
 
     private final VotacaoRepository votacaoRepository;
     private final UsuarioRepository usuarioRepository;
     private final SecaoRepository secaoRepository;
+    private final TopicProducer topicProducer;
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
     public VotoDTO enviarVoto(VotoDTO voto) {
@@ -76,6 +89,50 @@ public class VotacaoServiceImpl implements VotacaoService {
         } catch (Exception e){
             throw new VotacaoException(e.getMessage());
         }
+    }
+    @Transactional(propagation = Propagation.REQUIRED)
+    @Scheduled(cron = " 0/60 * * * * *")
+    public void consultaResultadoSecao(){
+        log.info("inicio do job");
+        var secao = secaoRepository.findAll();
+
+        var secoesEncerradasNaoEnviadas = secao.stream()
+                .filter(s-> !s.isResultadoEnviado())
+                .filter(s-> s.getDataFinalizacao().isBefore(LocalDateTime.now()))
+                .collect(Collectors.toList());
+
+        if(!secoesEncerradasNaoEnviadas.isEmpty()) {
+            var resultados = secoesEncerradasNaoEnviadas.stream().map(s -> {
+
+                var votacao = votacaoRepository.findBySecao(s);
+
+                var votosSim = votacao.stream().filter(voto -> voto.getVoto().equalsIgnoreCase("s"))
+                        .collect(Collectors.toList());
+                var votosNao = votacao.stream().filter(voto -> voto.getVoto().equalsIgnoreCase("n"))
+                        .collect(Collectors.toList());
+
+                s.setResultadoEnviado(true);
+                secaoRepository.save(s);
+
+                return ResultadoDTO
+                        .builder()
+                        .prazoFinal(s.getDataFinalizacao())
+                        .votosNAO(votosNao.size())
+                        .votosSIM(votosSim.size())
+                        .pauta(PautaDTO
+                                .builder()
+                                .nome(s.getPauta().getNome())
+                                .descricao(s.getPauta().getDescricao())
+                                .build())
+                        .build();
+
+            }).collect(Collectors.toList());
+
+
+            resultados.forEach(r -> topicProducer.send(r.toString()));
+        }
+        log.info("Fim do job");
+
     }
 
 

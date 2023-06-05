@@ -38,4 +38,7 @@ public class Secao extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_pauta")
     private Pauta pauta;
+
+    @Column(name = "resultado_enviado")
+    private boolean resultadoEnviado;
 }
