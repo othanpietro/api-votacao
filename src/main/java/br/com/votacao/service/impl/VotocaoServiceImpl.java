@@ -13,6 +13,7 @@ import br.com.votacao.service.VotacaoService;
 import br.com.votacao.utils.ValidaCPF;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.InputMismatchException;
 import java.util.Objects;
@@ -29,14 +30,16 @@ public class VotocaoServiceImpl implements VotacaoService {
 
         validaVoto(voto);
 
-        if(voto.getVoto().length() > 1){
-            throw new RuntimeException("Voto incorreto");
+        if(voto.getVoto().length() > 1 ||
+                !(voto.getVoto().equalsIgnoreCase("s")
+                        || voto.getVoto().equalsIgnoreCase("n"))){
+            throw new InputMismatchException("Voto incorreto");
         }
 
         var secao = secaoRepository.findById(voto.getIdSecao());
 
         if(Objects.isNull(secao)){
-            throw new RuntimeException("Secão inexistente");
+            throw new InputMismatchException("Secão inexistente");
         }
 
         var cpf = ValidaCPF.removeMascara(voto.getUsuarioDTO().getCpf());
@@ -79,12 +82,12 @@ public class VotocaoServiceImpl implements VotacaoService {
     }
     private void validaVoto(VotoDTO votoDTO){
         if(Objects.isNull(votoDTO) ||
-                Objects.isNull(votoDTO.getVoto()) ||
+                !StringUtils.hasText(votoDTO.getVoto()) ||
                 Objects.isNull(votoDTO.getIdSecao()) ||
                 Objects.isNull(votoDTO.getUsuarioDTO()) ||
-                Objects.isNull(votoDTO.getUsuarioDTO().getNome()) ||
-                Objects.isNull(votoDTO.getUsuarioDTO().getCpf())) {
-            throw new RuntimeException("Voto incorreto.");
+                !StringUtils.hasText(votoDTO.getUsuarioDTO().getNome()) ||
+                !StringUtils.hasText(votoDTO.getUsuarioDTO().getCpf())) {
+            throw new InputMismatchException("Voto incorreto.");
         }
     }
     private Usuario convertUsuarioDtoUsuario(UsuarioDTO usuarioDTO){
